@@ -160,6 +160,7 @@
   <ItemGroup>
     <ClInclude Include="Kamera.h" />
     <ClInclude Include="Kolo.h" />
+    <ClInclude Include="Obrecz.h" />
     <ClInclude Include="ShaderProgram.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -170,6 +171,7 @@
     <ClCompile Include="ConsoleApplication1.cpp" />
     <ClCompile Include="Kamera.cpp" />
     <ClCompile Include="Kolo.cpp" />
+    <ClCompile Include="Obrecz.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

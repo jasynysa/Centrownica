@@ -27,7 +27,7 @@ glm::mat4 Kamera::przesun(glm::fvec3 przesuniecie, glm::fvec3 kameraKierunek)
 	//obliczanie odwrotnosci macierzy
 	macierzWidoku = glm::transpose(macierzWidoku);//odwrotnosc macierzy jest trasformacja z przstrzeni swiata do przestrzeni kamery
 												  //tanslacja
-	macierzWidoku[3] = macierzWidoku * glm::fvec4(kameraPozycja, 1);
+	macierzWidoku[3] = macierzWidoku * glm::fvec4(-kameraPozycja, 1);
 
 	return macierzWidoku;
 }
