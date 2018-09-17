@@ -1,5 +1,13 @@
 #pragma once
 #include"glm/glm.hpp"
+
+class Oddzialywanie
+{
+public:
+	int idWierzcholka;
+	float dlugoscSprezyny;
+};
+
 class Obrecz
 {
 public:
@@ -23,7 +31,7 @@ public:
 
 	glm::fvec3* tablicaSil;//tablica w ktorej przechowywane sa coœ jakby si³y dzia³aj¹ce na poszczegolne punkty, jednak nie zmieniaja one predkosci punktow, tylko ich po³o¿enie, wiêc bardziej przypomina to prêdkoœæ
 	//glm::fvec3 tablicaSil[200];
-	int** tablicaOddzialywan;
+	Oddzialywanie** tablicaOddzialywan;
 	float* tablicaDlugosciSzprych;
 
 	float silaMax;

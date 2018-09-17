@@ -1,6 +1,7 @@
 #include "Obrecz.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <iostream>
 
 
 
@@ -13,17 +14,17 @@ Obrecz::Obrecz(int iloscSegmentow, float groboscObreczy):
 	iloscElementow = 24 * iloscSegmentow; //8 trojkatow na segment * 3 elemnty na trojkat
 	rozmiarTablicyWierzcholkow = iloscWierzcholkow * 8 * sizeof(float);
 	rozmiarTablicyElementow = iloscElementow * sizeof(int);
-	
+	przesuniecieMax = 0.08;
 
 	///alokacja pamieci
 	tablicaWierzcholkow = new float[iloscWierzcholkow * 8];
 	tablicaElementow = new int[iloscElementow];
 
 	tablicaSil = new glm::fvec3[iloscWierzcholkow];
-	tablicaOddzialywan = new int*[iloscWierzcholkow];
+	tablicaOddzialywan = new Oddzialywanie*[iloscWierzcholkow];
 	for (int i = 0; i < iloscWierzcholkow; i++)
 	{
-		tablicaOddzialywan[i] = new int[9];//bo kazdy wierzcholek oddzialowuje na 9 innych wierzcholkow
+		tablicaOddzialywan[i] = new Oddzialywanie[9];//bo kazdy wierzcholek oddzialowuje na 9 innych wierzcholkow
 	}
 	tablicaDlugosciSzprych = new float[iloscSegmentow];
 
@@ -104,16 +105,59 @@ Obrecz::Obrecz(int iloscSegmentow, float groboscObreczy):
 		//wyznaczanie wierzcholkow z aktualnego segmentu
 		for (int j = 0; j <3 ; j++)
 		{
-			tablicaOddzialywan[i][j] = pierwszyWierzSegmentu + (i + 1 + j) % 4; //dziwaczny sposob na uzyskanie wierzcholka z aktualnego segmentu
+			tablicaOddzialywan[i][j].idWierzcholka = pierwszyWierzSegmentu + (i + 1 + j) % 4; //dziwaczny sposob na uzyskanie wierzcholka z aktualnego segmentu
+			tablicaOddzialywan[i][j].dlugoscSprezyny =
+				//wyznaczanie doleglocsi miedzy wierzcholkami: oddzialywojacym i na ktory dziala sila
+				glm::distance
+				(
+					glm::fvec3(tablicaWierzcholkow[8 * i], tablicaWierzcholkow[8 * i + 1], tablicaWierzcholkow[8 * i + 2]),//pozycaj wierzcholka oddzialujacego
+					glm::fvec3(tablicaWierzcholkow[8 * tablicaOddzialywan[i][j].idWierzcholka], tablicaWierzcholkow[8 * tablicaOddzialywan[i][j].idWierzcholka + 1], tablicaWierzcholkow[8 * tablicaOddzialywan[i][j].idWierzcholka + 2])//pozycja wierzcholka na ktory dziala sila
+				);
 		}
 		//wyznaczanie wierzcholkow z kolejnego segmentu
-		tablicaOddzialywan[i][3] = (i + 4) % iloscWierzcholkow;
-		tablicaOddzialywan[i][4] = (pierwszyWierzSegmentu + 4 + ((i + 1) % 4)) % iloscWierzcholkow;
-		tablicaOddzialywan[i][5] = (pierwszyWierzSegmentu + 4 + ((i + 3) % 4)) % iloscWierzcholkow;
+		tablicaOddzialywan[i][3].idWierzcholka = (i + 4) % iloscWierzcholkow;
+		tablicaOddzialywan[i][3].dlugoscSprezyny =
+			glm::distance
+			(
+				glm::fvec3(tablicaWierzcholkow[8 * i], tablicaWierzcholkow[8 * i + 1], tablicaWierzcholkow[8 * i + 2]),//pozycaj wierzcholka oddzialujacego
+				glm::fvec3(tablicaWierzcholkow[8 * tablicaOddzialywan[i][3].idWierzcholka], tablicaWierzcholkow[8 * tablicaOddzialywan[i][3].idWierzcholka + 1], tablicaWierzcholkow[8 * tablicaOddzialywan[i][3].idWierzcholka + 2])//pozycja wierzcholka na ktory dziala sila
+			);
+		tablicaOddzialywan[i][4].idWierzcholka = (pierwszyWierzSegmentu + 4 + ((i + 1) % 4)) % iloscWierzcholkow;
+		tablicaOddzialywan[i][4].dlugoscSprezyny =
+			glm::distance
+			(
+				glm::fvec3(tablicaWierzcholkow[8 * i], tablicaWierzcholkow[8 * i + 1], tablicaWierzcholkow[8 * i + 2]),//pozycaj wierzcholka oddzialujacego
+				glm::fvec3(tablicaWierzcholkow[8 * tablicaOddzialywan[i][4].idWierzcholka], tablicaWierzcholkow[8 * tablicaOddzialywan[i][4].idWierzcholka + 1], tablicaWierzcholkow[8 * tablicaOddzialywan[i][4].idWierzcholka + 2])//pozycja wierzcholka na ktory dziala sila
+			);
+		tablicaOddzialywan[i][5].idWierzcholka = (pierwszyWierzSegmentu + 4 + ((i + 3) % 4)) % iloscWierzcholkow;
+		tablicaOddzialywan[i][5].dlugoscSprezyny =
+			glm::distance
+			(
+				glm::fvec3(tablicaWierzcholkow[8 * i], tablicaWierzcholkow[8 * i + 1], tablicaWierzcholkow[8 * i + 2]),//pozycaj wierzcholka oddzialujacego
+				glm::fvec3(tablicaWierzcholkow[8 * tablicaOddzialywan[i][5].idWierzcholka], tablicaWierzcholkow[8 * tablicaOddzialywan[i][5].idWierzcholka + 1], tablicaWierzcholkow[8 * tablicaOddzialywan[i][5].idWierzcholka + 2])//pozycja wierzcholka na ktory dziala sila
+			);
 		//wyznaczanie wierzcholkow z poprzedniego segmenu
-		tablicaOddzialywan[i][6] = (i + iloscWierzcholkow-4) % iloscWierzcholkow;
-		tablicaOddzialywan[i][7] = (pierwszyWierzSegmentu + iloscWierzcholkow - 4 + ((i + 1) % 4)) % iloscWierzcholkow;
-		tablicaOddzialywan[i][8] = (pierwszyWierzSegmentu + iloscWierzcholkow - 4 + ((i + 3) % 4)) % iloscWierzcholkow;
+		tablicaOddzialywan[i][6].idWierzcholka = (i + iloscWierzcholkow-4) % iloscWierzcholkow;
+		tablicaOddzialywan[i][6].dlugoscSprezyny =
+			glm::distance
+			(
+				glm::fvec3(tablicaWierzcholkow[8 * i], tablicaWierzcholkow[8 * i + 1], tablicaWierzcholkow[8 * i + 2]),//pozycaj wierzcholka oddzialujacego
+				glm::fvec3(tablicaWierzcholkow[8 * tablicaOddzialywan[i][6].idWierzcholka], tablicaWierzcholkow[8 * tablicaOddzialywan[i][6].idWierzcholka + 1], tablicaWierzcholkow[8 * tablicaOddzialywan[i][6].idWierzcholka + 2])//pozycja wierzcholka na ktory dziala sila
+			);
+		tablicaOddzialywan[i][7].idWierzcholka = (pierwszyWierzSegmentu + iloscWierzcholkow - 4 + ((i + 1) % 4)) % iloscWierzcholkow;
+		tablicaOddzialywan[i][7].dlugoscSprezyny =
+			glm::distance
+			(
+				glm::fvec3(tablicaWierzcholkow[8 * i], tablicaWierzcholkow[8 * i + 1], tablicaWierzcholkow[8 * i + 2]),//pozycaj wierzcholka oddzialujacego
+				glm::fvec3(tablicaWierzcholkow[8 * tablicaOddzialywan[i][7].idWierzcholka], tablicaWierzcholkow[8 * tablicaOddzialywan[i][7].idWierzcholka + 1], tablicaWierzcholkow[8 * tablicaOddzialywan[i][7].idWierzcholka + 2])//pozycja wierzcholka na ktory dziala sila
+			);
+		tablicaOddzialywan[i][8].idWierzcholka = (pierwszyWierzSegmentu + iloscWierzcholkow - 4 + ((i + 3) % 4)) % iloscWierzcholkow;
+		tablicaOddzialywan[i][8].dlugoscSprezyny =
+			glm::distance
+			(
+				glm::fvec3(tablicaWierzcholkow[8 * i], tablicaWierzcholkow[8 * i + 1], tablicaWierzcholkow[8 * i + 2]),//pozycaj wierzcholka oddzialujacego
+				glm::fvec3(tablicaWierzcholkow[8 * tablicaOddzialywan[i][8].idWierzcholka], tablicaWierzcholkow[8 * tablicaOddzialywan[i][8].idWierzcholka + 1], tablicaWierzcholkow[8 * tablicaOddzialywan[i][8].idWierzcholka + 2])//pozycja wierzcholka na ktory dziala sila
+			);
 	}
 
 
@@ -128,62 +172,59 @@ Obrecz::~Obrecz()
 
 void Obrecz::regulujSzpryche(int ktora, float dlugosc)
 {
-	int licznik=0;//slozy do sprawdzania czy jeszcze sie cos porusza
-	
+	int licznik=0;
 		//ustawianie glugosci szprychy
 		tablicaDlugosciSzprych[ktora] = dlugosc;
-		static int liczydlo=0;
-	//while (licznik != iloscWierzcholkow)
+	//while (licznik < 12)
 	{
 		//zerowanie tablicySil
 		for (int i = 0; i < iloscWierzcholkow; i++)
 		{
 			tablicaSil[i] = glm::fvec3(0);
 		}
-		if (liczydlo++ < 300)
-		{
-			tablicaSil[0] = glm::fvec3(-0.3, -0.3, 0);
-		}
-		////oddzialowanie szprych
-		//for (int i = 0; i < iloscSegmentow; i++)
-		//{//parzyste szprychy zamocowane sa po dodatniej stronie osi Z, a nieparzyste po ujemnej
-		//	tablicaSil[i * 4] =
-		//		glm::normalize
-		//		(
-		//			glm::fvec3(0, 0, groboscObreczy* std::pow((-1), i))
-		//			-
-		//			glm::fvec3(tablicaWierzcholkow[32 * i], tablicaWierzcholkow[32 * i + 1], tablicaWierzcholkow[32 * i + 2])
-		//		)
-		//		*
-		//		(
-		//			glm::distance
-		//			(
-		//				glm::fvec3(tablicaWierzcholkow[32 * i], tablicaWierzcholkow[32 * i + 1], tablicaWierzcholkow[32 * i + 2]),
-		//				glm::fvec3(0, 0, groboscObreczy* std::pow((-1), i))
-		//			)
-		//			-
-		//			tablicaDlugosciSzprych[i]
-		//		);
 
-		//	tablicaSil[i * 4 + 3] =
-		//		glm::normalize
-		//		(
-		//			glm::fvec3(0, 0, groboscObreczy* std::pow((-1), i))
-		//			-
-		//			glm::fvec3(tablicaWierzcholkow[32 * i + 24], tablicaWierzcholkow[32 * i + 25], tablicaWierzcholkow[32 * i + 26])
-		//		)
-		//		*
-		//		(
-		//			glm::distance
-		//			(
-		//				glm::fvec3(tablicaWierzcholkow[32 * i + 24], tablicaWierzcholkow[32 * i + 25], tablicaWierzcholkow[32 * i + 26]),
-		//				glm::fvec3(0, 0, groboscObreczy* std::pow((-1), i))
-		//			)
-		//			-
-		//			tablicaDlugosciSzprych[i]
-		//		);
-		//			
-		//}
+		
+		
+		//oddzialowanie szprych
+		for (int i = 0; i < iloscSegmentow; i++)
+		{//parzyste szprychy zamocowane sa po dodatniej stronie osi Z, a nieparzyste po ujemnej
+			tablicaSil[i * 4] = (float)0.005*
+				glm::normalize
+				(
+					glm::fvec3(0, 0, groboscObreczy* std::pow((-1), i))
+					-
+					glm::fvec3(tablicaWierzcholkow[32 * i], tablicaWierzcholkow[32 * i + 1], tablicaWierzcholkow[32 * i + 2])
+				)
+				*
+				(
+					glm::distance
+					(
+						glm::fvec3(tablicaWierzcholkow[32 * i], tablicaWierzcholkow[32 * i + 1], tablicaWierzcholkow[32 * i + 2]),
+						glm::fvec3(0, 0, groboscObreczy* std::pow((-1), i))
+					)
+					-
+					tablicaDlugosciSzprych[i]
+				);
+
+			tablicaSil[i * 4 + 3] = (float)0.005*
+				glm::normalize
+				(
+					glm::fvec3(0, 0, groboscObreczy* std::pow((-1), i))
+					-
+					glm::fvec3(tablicaWierzcholkow[32 * i + 24], tablicaWierzcholkow[32 * i + 25], tablicaWierzcholkow[32 * i + 26])
+				)
+				*
+				(
+					glm::distance
+					(
+						glm::fvec3(tablicaWierzcholkow[32 * i + 24], tablicaWierzcholkow[32 * i + 25], tablicaWierzcholkow[32 * i + 26]),
+						glm::fvec3(0, 0, groboscObreczy* std::pow((-1), i))
+					)
+					-
+					tablicaDlugosciSzprych[i]
+				);
+					
+		}
 
 		//oddzalywanie pukntow na siebie
 		for (int i = 0; i < iloscWierzcholkow; i++)
@@ -192,16 +233,16 @@ void Obrecz::regulujSzpryche(int ktora, float dlugosc)
 			for (int j = 0; j < 9; j++)// j<9 bo kadzdy punkt oddzialowujje na 9 innych
 			{
 				//wyliczanie sily polega na :
-				// 1) wyznaczeniu znormalicowanego wektora pomiedzy punktem na ktory dziala sila a punktem oddzalujacym
+				// 1) wyznaczeniu znormalizowanego wektora pomiedzy punktem na ktory dziala sila a punktem oddzalujacym
 				// 2) wyznaczenie odlegloscie miedzy tymi punktami i odjecie promiena okregu zmiany kierunku sil
 				// 3) pomno¿enie 1) i 2)
-				tablicaSil[tablicaOddzialywan[i][j]] += //tutaj sumowanie sa wszystkie sily ktore dzialaja na dany punkt
+				tablicaSil[tablicaOddzialywan[i][j].idWierzcholka] += //tutaj sumowanie sa wszystkie sily ktore dzialaja na dany punkt
 					//1)
 					glm::normalize//normalizowanie dlugosci wektora
 					(
 						glm::fvec3(tablicaWierzcholkow[8 * i], tablicaWierzcholkow[8 * i + 1], tablicaWierzcholkow[8 * i + 2])//pozycja wierzcholka odzialujacego
 						- //roznica
-						glm::fvec3(tablicaWierzcholkow[8 * tablicaOddzialywan[i][j]], tablicaWierzcholkow[8 * tablicaOddzialywan[i][j] + 1], tablicaWierzcholkow[8 * tablicaOddzialywan[i][j] + 2])//pozycja wierzcholka na ktory dziala sila
+						glm::fvec3(tablicaWierzcholkow[8 * tablicaOddzialywan[i][j].idWierzcholka], tablicaWierzcholkow[8 * tablicaOddzialywan[i][j].idWierzcholka + 1], tablicaWierzcholkow[8 * tablicaOddzialywan[i][j].idWierzcholka + 2])//pozycja wierzcholka na ktory dziala sila
 					)
 					//3)
 					*
@@ -211,41 +252,41 @@ void Obrecz::regulujSzpryche(int ktora, float dlugosc)
 						glm::distance
 						(
 							glm::fvec3(tablicaWierzcholkow[8 * i], tablicaWierzcholkow[8 * i + 1], tablicaWierzcholkow[8 * i + 2]),//pozycaj wierzcholka oddzialujacego
-							glm::fvec3(tablicaWierzcholkow[8 * tablicaOddzialywan[i][j]], tablicaWierzcholkow[8 * tablicaOddzialywan[i][j] + 1], tablicaWierzcholkow[8 * tablicaOddzialywan[i][j] + 2])//pozycja wierzcholka na ktory dziala sila
+							glm::fvec3(tablicaWierzcholkow[8 * tablicaOddzialywan[i][j].idWierzcholka], tablicaWierzcholkow[8 * tablicaOddzialywan[i][j].idWierzcholka + 1], tablicaWierzcholkow[8 * tablicaOddzialywan[i][j].idWierzcholka + 2])//pozycja wierzcholka na ktory dziala sila
 						)
 						- //odiecie promienia okragu zmiany kierunku sily
-						groboscObreczy
+						tablicaOddzialywan[i][j].dlugoscSprezyny
 					);
 			}
 		}
 
-		////tarcie
-		//for (int i = 0; i < iloscWierzcholkow; i++)
-		//{
-		//	glm::fvec3 poTarciu =tablicaSil[i]- glm::normalize(tablicaSil[i])*(float)groboscObreczy*(float)0.05;
-		//	if (glm::dot(tablicaSil[i], poTarciu) < 0)
-		//		tablicaSil[i] = glm::fvec3(0);
-		//	else
-		//		tablicaSil[i]=poTarciu;
-		//}
+		//znajdowanie najwiekszej sily
+		silaMax = glm::length(tablicaSil[0]);
+		
+		for (int i = 1; i <iloscWierzcholkow; i++)
+		{
+			float aktualnaSila=glm::length(tablicaSil[i]);
+			if (silaMax < aktualnaSila)
+				silaMax = aktualnaSila;
+		}
 
+		//ustalenie trawania kroku w oparciu o najwieksza sile
+		float krok = 0.05/silaMax;
+		std::cout << "krok= " << krok << std::endl;
 		//przesuwanie punktow
-		//punkprzesuwa sie jezeli sila jest wieksza od ustalonej sily tarcia
-
-		licznik = 0;
 		for (int i = 0; i < iloscWierzcholkow; i++)
 		{
 
 			//if (glm::length(tablicaSil[i]) > 0.0005)
 			{
-				tablicaWierzcholkow[8 * i] += tablicaSil[i].x*0.1;
-				tablicaWierzcholkow[8 * i + 1] += tablicaSil[i].y*0.1;
-				tablicaWierzcholkow[8 * i + 2] += tablicaSil[i].z*0.1;
+				tablicaWierzcholkow[8 * i] += tablicaSil[i].x*krok;
+				tablicaWierzcholkow[8 * i + 1] += tablicaSil[i].y*krok;
+				tablicaWierzcholkow[8 * i + 2] += tablicaSil[i].z*krok;
 			}
 			//else
-				licznik++;
-
+			
 		}
+		licznik++;
 	}
 }
 			
