@@ -20,14 +20,15 @@ public:
 
 	///model fizyki
 	void regulujSzpryche(int ktora, float dlugosc);
+	float katZ, katY;
+		
 
-	glm::fvec3* tablicaSil;//tablica w ktorej przechowywane sa coœ jakby si³y dzia³aj¹ce na poszczegolne punkty, jednak nie zmieniaja one predkosci punktow, tylko ich po³o¿enie, wiêc bardziej przypomina to prêdkoœæ
+	
 	//glm::fvec3 tablicaSil[200];
-	int** tablicaOddzialywan;
 	float* tablicaDlugosciSzprych;
+	
 
-	float silaMax;
-	float przesuniecieMax;
+	
 
 };
 
