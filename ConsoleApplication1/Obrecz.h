@@ -20,7 +20,7 @@ public:
 
 	///model fizyki
 	void regulujSzpryche(int ktora, float dlugosc);
-	float katZ, katY;
+	float katX, katY;
 		
 
 	

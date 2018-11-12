@@ -77,6 +77,19 @@ Obrecz::Obrecz(int iloscSegmentow, float groboscObreczy):
 	}
 
 
+	///wypelnianie tablicy elementow
+	for (int i = 0; i < iloscSegmentow; i++)//w karzdym cyklu formowane sa trojkaty dla itego segmetu
+	{
+		for (int j = 0; j < 4; j++)
+		{
+			tablicaElementow[i * 24 + (j + 4) * 3] = tablicaElementow[i * 24 + j * 3] = (4 * i + j);//i przesuwa o 24 elementy bo w segmecie jest 8 trojkotow po 3 wierzcholki kazdy
+			tablicaElementow[i * 24 + (j + 4) * 3 + 1] = tablicaElementow[i * 24 + j * 3 + 1] = (4 * i + (1 + j) % 4);
+			tablicaElementow[i * 24 + j * 3 + 2] = (4 * i + 4 + j) % iloscWierzcholkow;
+			tablicaElementow[i * 24 + (j + 4) * 3 + 2] = ((4 * i + iloscWierzcholkow - 4) % iloscWierzcholkow) + ((1 + j) % 4);
+		}
+	}
+
+
 	///wypelnianie tablicyDlugosciSzprych
 	for (int i = 0; i < iloscSegmentow; i++)
 		tablicaDlugosciSzprych[i] = 1;
@@ -93,35 +106,52 @@ void Obrecz::regulujSzpryche(int ktora, float dlugosc)
 		//ustawianie glugosci szprychy
 		tablicaDlugosciSzprych[ktora] = dlugosc;
 		
-	float is=0, isc = 0, jcc = 0, js = 0, ksc = 0, kcc = 0;
+		float I = 0, II = 0, III = 0, IV = 0, V = 0, VI = 0, OPx=0, OLx=0, OPy=0, OLy=0, OPz=0, OLz=0, Ox=0, Oy=0, Oz=0;
 		
-	//sumowanie wspolrzednych prawych szprych
+	//sumowanie wspolrzednych z uwzglednieniem naciagu prawych szprych
 	for (int i=0, j = iloscSegmentow / 2 + iloscSegmentow % 2; i < j; i++)//pierwsza szprycha jest prawa
 	{
-		is += tablicaWierzcholkow[64 * i + 1]*tablicaDlugosciSzprych[i*2];
-		isc += -tablicaWierzcholkow[64 * i + 2] * tablicaDlugosciSzprych[i * 2];
+		OPx += tablicaWierzcholkow[64 * i] * tablicaDlugosciSzprych[i * 2];
+		OPy += tablicaWierzcholkow[64 * i + 1] * tablicaDlugosciSzprych[i * 2];
+		OPz += tablicaWierzcholkow[64 * i + 2] * tablicaDlugosciSzprych[i * 2];
+		//I += tablicaWierzcholkow[64 * i + 1]*tablicaDlugosciSzprych[i*2];//y
+		//II += -tablicaWierzcholkow[64 * i + 2] * tablicaDlugosciSzprych[i * 2];
 
-		jcc += tablicaWierzcholkow[64 * i + 2] * tablicaDlugosciSzprych[i * 2];
-		js += -tablicaWierzcholkow[64 * i] * tablicaDlugosciSzprych[i * 2];
+		//III += tablicaWierzcholkow[64 * i + 2] * tablicaDlugosciSzprych[i * 2];
+		//IV += -tablicaWierzcholkow[64 * i] * tablicaDlugosciSzprych[i * 2];
 
-		ksc += tablicaWierzcholkow[64 * i] * tablicaDlugosciSzprych[i * 2];
-		kcc += -tablicaWierzcholkow[64 * i] * tablicaDlugosciSzprych[i * 2];
+		//V += tablicaWierzcholkow[64 * i] * tablicaDlugosciSzprych[i * 2];
+		//VI += -tablicaWierzcholkow[64 * i] * tablicaDlugosciSzprych[i * 2];
 	}
 	
-	//sumowanie wspolrzednych lewych szprych
+	//sumowanie wspolrzednych z uwzglednieniem naciagu lewych szprych
 	for (int i=1, j = iloscSegmentow / 2 + 1; i < j; i++)
 	{
+		OLx += tablicaWierzcholkow[32 * (i * 2 - 1)] * tablicaDlugosciSzprych[i * 2 - 1];
+		OLy += tablicaWierzcholkow[32 * (i * 2 - 1) + 1] * tablicaDlugosciSzprych[i * 2 - 1];
+		OLz += tablicaWierzcholkow[32 * (i * 2 - 1) + 2] * tablicaDlugosciSzprych[i * 2 - 1];
 
-		is +=   tablicaWierzcholkow[32 * (i*2-1) + 1] * tablicaDlugosciSzprych[i * 2];//
-		isc += tablicaWierzcholkow[32 * (i * 2 - 1) + 2] * tablicaDlugosciSzprych[i * 2];
+		//I +=   tablicaWierzcholkow[32 * (i*2-1) + 1] * tablicaDlugosciSzprych[i * 2-1];//
+		//II += tablicaWierzcholkow[32 * (i * 2 - 1) + 2] * tablicaDlugosciSzprych[i * 2-1];
 
-		jcc -= tablicaWierzcholkow[32 * (i * 2 - 1) + 2] * tablicaDlugosciSzprych[i * 2];//
-		js += tablicaWierzcholkow[32 * (i * 2 - 1)] * tablicaDlugosciSzprych[i * 2];//
+		//III -= tablicaWierzcholkow[32 * (i * 2 - 1) + 2] * tablicaDlugosciSzprych[i * 2-1];//
+		//IV += tablicaWierzcholkow[32 * (i * 2 - 1)] * tablicaDlugosciSzprych[i * 2-1];//
 
-		ksc -=tablicaWierzcholkow[32 * (i * 2 - 1)] * tablicaDlugosciSzprych[i * 2];
-		kcc += tablicaWierzcholkow[32 * (i * 2 - 1) + 1] * tablicaDlugosciSzprych[i * 2];
+		//V -=tablicaWierzcholkow[32 * (i * 2 - 1)] * tablicaDlugosciSzprych[i * 2-1];
+		//VI += tablicaWierzcholkow[32 * (i * 2 - 1) + 1] * tablicaDlugosciSzprych[i * 2-1];
 	}
-	katZ = atan(-jcc * is / js);
-	katY = atan(cos(katZ)*jcc / js);
+
+	//wypelnianie pomocniczych zmiennych 
+	Ox = OPx - OLx;
+	Oy = OPy - OLy;	
+	Oz = OPz - OLz;
+		
+	//obliczanie katow obrotow
+	katY = atan((Oz*Oz)/(Oy*Ox));//alfa
+	if (Oz == 0)
+		katX=M_PI/2;
+	else
+	katX = atan(sin(katY)*(Oy/Oz));//fi
+	
 }
 			

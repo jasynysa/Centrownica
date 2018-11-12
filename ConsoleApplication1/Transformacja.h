@@ -43,7 +43,7 @@ namespace tran
 		glm::mat4 macierzObrotuY(1);
 		macierzObrotuY[0].x = cosinus;
 		macierzObrotuY[0].z = sinus;
-		macierzObrotuY[2].x = sinus;
+		macierzObrotuY[2].x = -sinus;
 		macierzObrotuY[2].z = cosinus;
 		return macierzObrotuY;
 	}
