@@ -19,8 +19,10 @@ public:
 	float groboscObreczy;//jako czesc promienia obreczy
 	float* tablicaWierzcholkow;
 	int* tablicaElementow;
+	int* tablicaElementowSzprychy;
 	int iloscWierzcholkow;
 	int iloscElementow;
+	int iloscElementowSzprych;
 	int iloscSegmentow;
 	int rozmiarTablicyWierzcholkow;
 	int rozmiarTablicyElementow;
@@ -28,14 +30,13 @@ public:
 
 	///model fizyki
 	void regulujSzpryche(int ktora, float dlugosc);
+	void fizyka(float dCzas);
 
-	glm::fvec3* tablicaSil;//tablica w ktorej przechowywane sa coœ jakby si³y dzia³aj¹ce na poszczegolne punkty, jednak nie zmieniaja one predkosci punktow, tylko ich po³o¿enie, wiêc bardziej przypomina to prêdkoœæ
-	//glm::fvec3 tablicaSil[200];
-	Oddzialywanie** tablicaOddzialywan;
+	glm::fvec3* tablicaSil;//tablica sil ktore dzialaja na wierzcholki
+	glm::fvec3* tablicaPredkosci;//tablica predkosci wierzcholkow
+	Oddzialywanie** tablicaOddzialywan;//tablica opiosuje odzialywania miedzy wierzcholkami
 	float* tablicaDlugosciSzprych;
 
-	float silaMax;
-	float przesuniecieMax;
 
 };
 

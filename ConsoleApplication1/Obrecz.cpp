@@ -9,17 +9,23 @@ Obrecz::Obrecz(int iloscSegmentow, float groboscObreczy):
 	groboscObreczy(groboscObreczy),
 	iloscSegmentow(iloscSegmentow)
 {
+
 	///nadawanie wartosci zmiennym
 	iloscWierzcholkow = iloscSegmentow * 4;
 	iloscElementow = 24 * iloscSegmentow; //8 trojkatow na segment * 3 elemnty na trojkat
 	rozmiarTablicyWierzcholkow = iloscWierzcholkow * 8 * sizeof(float);
 	rozmiarTablicyElementow = iloscElementow * sizeof(int);
-	przesuniecieMax = 0.08;
+	iloscElementowSzprych = iloscSegmentow * 2;
+
 
 	///alokacja pamieci
+	//grafika
 	tablicaWierzcholkow = new float[iloscWierzcholkow * 8];
 	tablicaElementow = new int[iloscElementow];
+	tablicaElementowSzprychy = new int[iloscElementowSzprych];
 
+	//fizyka
+	tablicaPredkosci = new glm::fvec3[iloscWierzcholkow];
 	tablicaSil = new glm::fvec3[iloscWierzcholkow];
 	tablicaOddzialywan = new Oddzialywanie*[iloscWierzcholkow];
 	for (int i = 0; i < iloscWierzcholkow; i++)
@@ -27,6 +33,12 @@ Obrecz::Obrecz(int iloscSegmentow, float groboscObreczy):
 		tablicaOddzialywan[i] = new Oddzialywanie[9];//bo kazdy wierzcholek oddzialowuje na 9 innych wierzcholkow
 	}
 	tablicaDlugosciSzprych = new float[iloscSegmentow];
+
+
+	///zerowanie tablicy predkosci
+	for (int i = 0; i < iloscWierzcholkow; i++)
+		tablicaPredkosci[i]=glm::fvec3(0);
+
 
 	///wypelnianie tablicy wierzcholkow
 	for (int i = 0; i < iloscSegmentow; i++)//jeden cykl to wypelnienie calego segmentu czyli czterech wierzcholkow wiec 32= 4 weirzcholki* 8 atrybutow w wierzcholku
@@ -95,6 +107,9 @@ Obrecz::Obrecz(int iloscSegmentow, float groboscObreczy):
 			tablicaElementow[i * 24 + (j + 4) * 3 + 2] = ((4 * i + iloscWierzcholkow - 4) % iloscWierzcholkow) + ((1 + j) % 4);
 		}
 	}
+
+
+	///wypelnianie tablicy elementow szprych
 
 
 	///wypelnianie tablicy oddzialywan
@@ -166,29 +181,50 @@ Obrecz::Obrecz(int iloscSegmentow, float groboscObreczy):
 		tablicaDlugosciSzprych[i] = 1;
 }
 
+
 Obrecz::~Obrecz()
 {
 }
 
+
 void Obrecz::regulujSzpryche(int ktora, float dlugosc)
 {
-	int licznik=0;
-		//ustawianie glugosci szprychy
-		tablicaDlugosciSzprych[ktora] = dlugosc;
-	//while (licznik < 12)
+	///ustawianie glugosci szprychy
+	tablicaDlugosciSzprych[ktora] += dlugosc;
+}
+
+
+void Obrecz::fizyka(float dCzasA)
+{
+	for (int i = 1; i <= 10; i++)
 	{
+		float dCzas = dCzasA * i / 10;
+		///zmiana polozenia (przesuwanie) wierzcholkow w oparciu o przedkosc i dCzas
+		for (int i = 0; i < iloscWierzcholkow; i++)
+		{
+
+
+			{
+				tablicaWierzcholkow[8 * i] += tablicaPredkosci[i].x*dCzas;
+				tablicaWierzcholkow[8 * i + 1] += tablicaPredkosci[i].y*dCzas;
+				tablicaWierzcholkow[8 * i + 2] += tablicaPredkosci[i].z*dCzas;
+			}
+
+
+		}
+
+
+		///obliczanie sil dzalajach na wierzcholki przy aktualnej konfiguracji
 		//zerowanie tablicySil
 		for (int i = 0; i < iloscWierzcholkow; i++)
 		{
 			tablicaSil[i] = glm::fvec3(0);
 		}
 
-		
-		
 		//oddzialowanie szprych
 		for (int i = 0; i < iloscSegmentow; i++)
 		{//parzyste szprychy zamocowane sa po dodatniej stronie osi Z, a nieparzyste po ujemnej
-			tablicaSil[i * 4] = (float)0.005*
+			tablicaSil[i * 4] =(float)0.01*
 				glm::normalize
 				(
 					glm::fvec3(0, 0, groboscObreczy* std::pow((-1), i))
@@ -204,9 +240,10 @@ void Obrecz::regulujSzpryche(int ktora, float dlugosc)
 					)
 					-
 					tablicaDlugosciSzprych[i]
-				);
+						
+					);
 
-			tablicaSil[i * 4 + 3] = (float)0.005*
+			tablicaSil[i * 4 + 3] =(float)0.01*
 				glm::normalize
 				(
 					glm::fvec3(0, 0, groboscObreczy* std::pow((-1), i))
@@ -222,8 +259,8 @@ void Obrecz::regulujSzpryche(int ktora, float dlugosc)
 					)
 					-
 					tablicaDlugosciSzprych[i]
-				);
-					
+					);
+
 		}
 
 		//oddzalywanie pukntow na siebie
@@ -256,37 +293,28 @@ void Obrecz::regulujSzpryche(int ktora, float dlugosc)
 						)
 						- //odiecie promienia okragu zmiany kierunku sily
 						tablicaOddzialywan[i][j].dlugoscSprezyny
-					);
+						);
 			}
 		}
 
-		//znajdowanie najwiekszej sily
-		silaMax = glm::length(tablicaSil[0]);
-		
-		for (int i = 1; i <iloscWierzcholkow; i++)
-		{
-			float aktualnaSila=glm::length(tablicaSil[i]);
-			if (silaMax < aktualnaSila)
-				silaMax = aktualnaSila;
-		}
-
-		//ustalenie trawania kroku w oparciu o najwieksza sile
-		float krok = 0.05/silaMax;
-		std::cout << "krok= " << krok << std::endl;
-		//przesuwanie punktow
+		//tarcie
 		for (int i = 0; i < iloscWierzcholkow; i++)
 		{
-
-			//if (glm::length(tablicaSil[i]) > 0.0005)
-			{
-				tablicaWierzcholkow[8 * i] += tablicaSil[i].x*krok;
-				tablicaWierzcholkow[8 * i + 1] += tablicaSil[i].y*krok;
-				tablicaWierzcholkow[8 * i + 2] += tablicaSil[i].z*krok;
-			}
+			//if (glm::length(tablicaSil[i]) < 0.01 && glm::length(tablicaPredkosci[i]) < 0.01)//dla male sily i predkosci sila jest rowna  0 i predkosc jest rowna 0
+			//{
+			//	tablicaSil[i] = glm::fvec3(0);
+			//	tablicaPredkosci[i] = glm::fvec3(0);
+			//}
 			//else
-			
+			if(tablicaPredkosci[i]!=glm::fvec3(0))
+				tablicaSil[i] -= tablicaPredkosci[i] * (float)0.00001 / glm::length(tablicaPredkosci[i]);//sila dziala przeciwnie do kierunku wektora predkosci
 		}
-		licznik++;
+
+		///zmiana predkosci na podstawie sily i dCzas (kazdy wierzcholek ma mase jednostkowa)
+		for (int i = 0; i < iloscWierzcholkow; i++)
+		{
+			tablicaPredkosci[i] += tablicaSil[i] * dCzas;
+		}
 	}
 }
 			
