@@ -13,17 +13,17 @@ Obrecz::Obrecz(int iloscSegmentow, float groboscObreczy):
 	///nadawanie wartosci zmiennym
 	iloscWierzcholkow = iloscSegmentow * 4;
 	iloscElementow = 24 * iloscSegmentow; //8 trojkatow na segment * 3 elemnty na trojkat
-	rozmiarTablicyWierzcholkow = iloscWierzcholkow * 8 * sizeof(float);
-	rozmiarTablicyElementow = iloscElementow * sizeof(int);
-	iloscElementowSzprych = iloscSegmentow * 2;
+	iloscElementowSzprych = iloscSegmentow * 4;
+	rozmiarTablicyWierzcholkow = (iloscWierzcholkow + 2) * 8 * sizeof(float);
+	rozmiarTablicyElementow = (iloscElementow+iloscElementowSzprych) * sizeof(int);
+	
 
 
 	///alokacja pamieci
 	//grafika
-	tablicaWierzcholkow = new float[iloscWierzcholkow * 8];
-	tablicaElementow = new int[iloscElementow];
-	tablicaElementowSzprychy = new int[iloscElementowSzprych];
-
+	tablicaWierzcholkow = new float[(iloscWierzcholkow + 2) * 8];//+2 bo jeszcze dwa wierzcholki na piasscie
+	//tablicaElementow = new int[iloscElementow+iloscElementowSzprych];
+	
 	//fizyka
 	tablicaPredkosci = new glm::fvec3[iloscWierzcholkow];
 	tablicaSil = new glm::fvec3[iloscWierzcholkow];
@@ -94,6 +94,24 @@ Obrecz::Obrecz(int iloscSegmentow, float groboscObreczy):
 		
 		
 	}
+	//uzupelnianie o wierzcholki piasty
+	tablicaWierzcholkow[iloscWierzcholkow * 8] = 0;//x
+	tablicaWierzcholkow[iloscWierzcholkow * 8 + 1] = 0;//y
+	tablicaWierzcholkow[iloscWierzcholkow * 8 + 2] = groboscObreczy;//z
+	tablicaWierzcholkow[iloscWierzcholkow * 8 + 3] = 1;
+	tablicaWierzcholkow[iloscWierzcholkow * 8 + 4] = 1;
+	tablicaWierzcholkow[iloscWierzcholkow * 8 + 5] = 1;
+	tablicaWierzcholkow[iloscWierzcholkow * 8 + 6] = 0;
+	tablicaWierzcholkow[iloscWierzcholkow * 8 + 7] = 0;
+
+	tablicaWierzcholkow[(iloscWierzcholkow + 1) * 8] = 0;//x
+	tablicaWierzcholkow[(iloscWierzcholkow + 1) * 8 + 1] = 0;//y
+	tablicaWierzcholkow[(iloscWierzcholkow + 1) * 8 + 2] = -groboscObreczy;//z
+	tablicaWierzcholkow[(iloscWierzcholkow + 1) * 8 + 3] = 1;
+	tablicaWierzcholkow[(iloscWierzcholkow + 1) * 8 + 4] = 1;
+	tablicaWierzcholkow[(iloscWierzcholkow + 1) * 8 + 5] = 1;
+	tablicaWierzcholkow[(iloscWierzcholkow + 1) * 8 + 6] = 0;
+	tablicaWierzcholkow[(iloscWierzcholkow + 1) * 8 + 7] = 0;
 
 
 	///wypelnianie tablicy elementow
@@ -107,10 +125,19 @@ Obrecz::Obrecz(int iloscSegmentow, float groboscObreczy):
 			tablicaElementow[i * 24 + (j + 4) * 3 + 2] = ((4 * i + iloscWierzcholkow - 4) % iloscWierzcholkow) + ((1 + j) % 4);
 		}
 	}
+	//uzupelnianie o elementy szprych
+	/*tablicaElementow[iloscElementow] = iloscWierzcholkow;
+	tablicaElementow[iloscElementow + 1] = iloscWierzcholkow + 1;*/
+	for (int i = 0; i < iloscSegmentow; i++)//do jednego segmetu przymocowane sa dwie szprychy
+	{
+		//pierwsza szprycha segmetu
+		tablicaElementow[iloscElementow + i * 4] = i * 4;
+		tablicaElementow[iloscElementow + i*4 + 1] = iloscWierzcholkow + (i % 2);//jezeli szprycha jest parzysta to jest przylaczona do wierzcholka piasty po dodatniej stronie z 
 
-
-	///wypelnianie tablicy elementow szprych
-
+		//druga szprycha segmentu
+		tablicaElementow[iloscElementow + i*4 + 2] = i * 4 + 3;
+		tablicaElementow[iloscElementow + i*4 + 3] = iloscWierzcholkow + (i % 2);
+	}
 
 	///wypelnianie tablicy oddzialywan
 	for (int i = 0; i < iloscWierzcholkow; i++)

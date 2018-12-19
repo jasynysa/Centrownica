@@ -18,8 +18,8 @@ public:
 	///model grafiki
 	float groboscObreczy;//jako czesc promienia obreczy
 	float* tablicaWierzcholkow;
-	int* tablicaElementow;
-	int* tablicaElementowSzprychy;
+	//int* tablicaElementow;
+	int tablicaElementow[1000];
 	int iloscWierzcholkow;
 	int iloscElementow;
 	int iloscElementowSzprych;
